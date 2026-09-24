@@ -4,7 +4,7 @@ plugins {
 }
 
 android {
-    namespace = "Android System Key Verifier"
+    namespace = "com.google.android.contactkeys"
     compileSdk = 34
 
     defaultConfig {
