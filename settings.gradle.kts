@@ -19,5 +19,5 @@ dependencyResolutionManagement {
     }
 }
 
-rootProject.name = "Play Services for AR placeholder"
+rootProject.name = "Android System Key Verifier placeholder"
 include(":app")
