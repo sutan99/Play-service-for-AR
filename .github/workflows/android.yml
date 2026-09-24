@@ -38,6 +38,7 @@ jobs:
         alias: ${{ secrets.ALIAS }}
         keyStorePassword: ${{ secrets.KEY_STORE_PASSWORD }}
         keyPassword: ${{ secrets.KEY_PASSWORD }}
+        build-tools-version: '34.0.0'
 
     # Mengunggah hasil APK rilis yang berukuran kecil dan siap instal
     - name: Upload Signed APK Artifact
