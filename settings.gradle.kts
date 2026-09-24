@@ -19,5 +19,5 @@ dependencyResolutionManagement {
     }
 }
 
-rootProject.name = "Safetycore placeholder"
+rootProject.name = "Play Services for AR placeholder"
 include(":app")
