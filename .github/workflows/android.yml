@@ -5,6 +5,7 @@ on:
     branches: [ "main" ]
   pull_request:
     branches: [ "main" ]
+  workflow_dispatch: # Mengaktifkan tombol menu "Run workflow" manual
 
 jobs:
   build:
@@ -22,37 +23,26 @@ jobs:
 
     - name: Grant execute permission for gradlew
       run: chmod +x gradlew
-   
-    - name: Build with Gradle
-      run: ./gradlew build -x lintDebug
 
-    - name: Tree
-      run: tree -L 3
-    
-    - name: Upload APK
+    # Membuat berkas rilis dan mengompres ukuran APK menjadi kecil
+    - name: Build Release APK
+      run: ./gradlew assembleRelease
+
+    # Proses Menandatangani APK menggunakan data rahasia dari GitHub Secrets
+    - name: Sign APK
+      uses: r0adkll/sign-android-release@v1
+      id: sign_app
+      with:
+        releaseDirectory: app/build/outputs/apk/release
+        signingKeyBase64: ${{ secrets.SIGNING_KEY }}
+        alias: ${{ secrets.ALIAS }}
+        keyStorePassword: ${{ secrets.KEY_STORE_PASSWORD }}
+        keyPassword: ${{ secrets.KEY_PASSWORD }}
+
+    # Mengunggah hasil APK rilis yang berukuran kecil dan siap instal
+    - name: Upload Signed APK Artifact
       uses: actions/upload-artifact@v4
       with:
-        name: Placeholder
-        path: app/build/outputs/apk/debug/app-debug.apk
-    
-    - name: Build Release APK
-        run: ./gradlew assembleRelease
-
-      # 2. Proses Signing dengan Keystore (Menggunakan data dari GitHub Secrets)
-      - name: Sign APK
-        uses: r0adkll/sign-android-release@v1
-        id: sign_app
-        with:
-          releaseDirectory: app/build/outputs/apk/release
-          signingKeyBase64: ${{ secrets.SIGNING_KEY }}
-          alias: ${{ secrets.ALIAS }}
-          keyStorePassword: ${{ secrets.KEY_STORE_PASSWORD }}
-          keyPassword: ${{ secrets.KEY_PASSWORD }}
-
-      # 3. Mengunggah hasil APK yang sudah kecil dan sudah siap instal
-      - name: Upload Signed APK Artifact
-        uses: actions/upload-artifact@v4
-        with:
-          name: APK-Rilis-Kecil
-          path: ${{ steps.sign_app.outputs.signedReleaseFile }}
-          
+        name: APK-Rilis-Kecil
+        path: ${{ steps.sign_app.outputs.signedReleaseFile }}
+        
