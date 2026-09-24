@@ -28,33 +28,40 @@ jobs:
     - name: Build Release APK
       run: ./gradlew assembleRelease
 
-        # Proses Menandatangani APK secara manual menggunakan SDK Android bawaan server
+    # Proses Menandatangani APK secara manual menggunakan SDK Android bawaan server
     - name: Sign APK Manual
       id: sign_app
       run: |
-        # 1. Ambil file Keystore dari GitHub Secrets dan ubah kembali menjadi file biner .jks
-        echo "${{ secrets.SIGNING_KEY }}" | base64 -d > release.keystore
+        # 1. Ambil file Keystore dari GitHub Secrets dan simpan di root direktori
+        echo "${{ secrets.SIGNING_KEY }}" | base64 -d > $GITHUB_WORKSPACE/release.keystore
         
         # 2. Cari lokasi folder build-tools terbaru secara otomatis di server
         BUILD_TOOLS_DIR=$(ls -d $ANDROID_HOME/build-tools/* | sort -V | tail -n 1)
         echo "Menggunakan Build Tools dari: $BUILD_TOOLS_DIR"
         
-        # 3. Masuk ke folder output APK rilis
-        cd app/build/outputs/apk/release
+        # 3. Tentukan path APK secara eksplisit dari root
+        APK_DIR="$GITHUB_WORKSPACE/app/build/outputs/apk/release"
         
         # 4. Lakukan Zipalign (Optimasi ukuran berkas)
-        $BUILD_TOOLS_DIR/zipalign -v 4 app-release-unsigned.apk app-release-aligned.apk
+        $BUILD_TOOLS_DIR/zipalign -v 4 \
+          $APK_DIR/app-release-unsigned.apk \
+          $APK_DIR/app-release-aligned.apk
         
         # 5. Tanda tangani APK menggunakan apksigner resmi
-        $BUILD_TOOLS_DIR/apksigner sign --ks ../../../../release.keystore \
+        $BUILD_TOOLS_DIR/apksigner sign \
+          --ks $GITHUB_WORKSPACE/release.keystore \
           --ks-key-alias "${{ secrets.ALIAS }}" \
           --ks-pass pass:"${{ secrets.KEY_STORE_PASSWORD }}" \
           --key-pass pass:"${{ secrets.KEY_PASSWORD }}" \
-          --out app-release-signed.apk app-release-aligned.apk
+          --out $APK_DIR/app-release-signed.apk \
+          $APK_DIR/app-release-aligned.apk
           
         # 6. Verifikasi hasil tanda tangan
-        $BUILD_TOOLS_DIR/apksigner verify app-release-signed.apk
-
+        $BUILD_TOOLS_DIR/apksigner verify $APK_DIR/app-release-signed.apk
+        
+        # 7. (Opsional) Hapus file keystore demi keamanan runner
+        rm $GITHUB_WORKSPACE/release.keystore
+        
     # Mengunggah hasil APK rilis yang sudah kecil dan sukses ditandatangani
     - name: Upload Signed APK Artifact
       uses: actions/upload-artifact@v4
