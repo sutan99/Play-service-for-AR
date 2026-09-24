@@ -4,15 +4,15 @@ plugins {
 }
 
 android {
-    namespace = "com.google.AR.core"
+    namespace = "com.google.ar.core"
     compileSdk = 34
 
     defaultConfig {
-        applicationId = "com.google.AR.core"
+        applicationId = "com.google.ar.core"
         minSdk = 24
         targetSdk = 34
-        versionCode = 2000000000
-        versionName = "2000000000"
+        versionCode = 3000000000
+        versionName = "3000000000"
     }
 
     buildTypes {
