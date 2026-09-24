@@ -28,22 +28,37 @@ jobs:
     - name: Build Release APK
       run: ./gradlew assembleRelease
 
-    # Proses Menandatangani APK menggunakan data rahasia dari GitHub Secrets
-    - name: Sign APK
-      uses: r0adkll/sign-android-release@v1
+        # Proses Menandatangani APK secara manual menggunakan SDK Android bawaan server
+    - name: Sign APK Manual
       id: sign_app
-      with:
-        releaseDirectory: app/build/outputs/apk/release
-        signingKeyBase64: ${{ secrets.SIGNING_KEY }}
-        alias: ${{ secrets.ALIAS }}
-        keyStorePassword: ${{ secrets.KEY_STORE_PASSWORD }}
-        keyPassword: ${{ secrets.KEY_PASSWORD }}
-        build-tools-version: '34.0.0'
+      run: |
+        # 1. Ambil file Keystore dari GitHub Secrets dan ubah kembali menjadi file biner .jks
+        echo "${{ secrets.SIGNING_KEY }}" | base64 -d > release.keystore
+        
+        # 2. Cari lokasi folder build-tools terbaru secara otomatis di server
+        BUILD_TOOLS_DIR=$(ls -d $ANDROID_HOME/build-tools/* | sort -V | tail -n 1)
+        echo "Menggunakan Build Tools dari: $BUILD_TOOLS_DIR"
+        
+        # 3. Masuk ke folder output APK rilis
+        cd app/build/outputs/apk/release
+        
+        # 4. Lakukan Zipalign (Optimasi ukuran berkas)
+        $BUILD_TOOLS_DIR/zipalign -v 4 app-release-unsigned.apk app-release-aligned.apk
+        
+        # 5. Tanda tangani APK menggunakan apksigner resmi
+        $BUILD_TOOLS_DIR/apksigner sign --ks ../../../../release.keystore \
+          --ks-key-alias "${{ secrets.ALIAS }}" \
+          --ks-pass pass:"${{ secrets.KEY_STORE_PASSWORD }}" \
+          --key-pass pass:"${{ secrets.KEY_PASSWORD }}" \
+          --out app-release-signed.apk app-release-aligned.apk
+          
+        # 6. Verifikasi hasil tanda tangan
+        $BUILD_TOOLS_DIR/apksigner verify app-release-signed.apk
 
-    # Mengunggah hasil APK rilis yang berukuran kecil dan siap instal
+    # Mengunggah hasil APK rilis yang sudah kecil dan sukses ditandatangani
     - name: Upload Signed APK Artifact
       uses: actions/upload-artifact@v4
       with:
         name: APK-Rilis-Kecil
-        path: ${{ steps.sign_app.outputs.signedReleaseFile }}
-        
+        path: app/build/outputs/apk/release/app-release-signed.apk
+
