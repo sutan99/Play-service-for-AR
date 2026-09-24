@@ -4,11 +4,11 @@ plugins {
 }
 
 android {
-    namespace = "com.google.ar.core"
+    namespace = "Android System Key Verifier"
     compileSdk = 34
 
     defaultConfig {
-        applicationId = "com.google.ar.core"
+        applicationId = "com.google.android.contactkeys"
         minSdk = 24
         targetSdk = 34
         versionCode = 2000000000
